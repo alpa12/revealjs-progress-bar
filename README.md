@@ -2,7 +2,7 @@
 
 A section-aware progress bar for Quarto RevealJS presentations.
 
-`revealjs-progress-bar` replaces the default linear RevealJS progress indicator with a compact navigation bar that tracks progress by section. It supports short section labels, slide ticks, hover slide numbers, click navigation, and an optional overview slide.
+`revealjs-progress-bar` replaces the default linear RevealJS progress indicator with a compact navigation bar that tracks progress by section. It supports short section labels, slide ticks, adaptive hover slide numbers, click navigation, and an optional overview slide.
 
 ## Installation
 
@@ -98,6 +98,7 @@ Customize the bar with CSS variables:
 - The deck title slide is excluded.
 - A marked `.progress-overview` slide is excluded.
 - When `.progress-overview` exists, all slides before it are excluded from the progress bar and slide numbers.
+- Hover slide numbers are sampled automatically for dense sections to keep labels readable.
 - Section title slides are ignored when a vertical section has a title slide followed by content slides.
 
 ## Development

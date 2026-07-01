@@ -29,12 +29,12 @@ It is designed for decks where the audience should know where they are in the st
 
 - One segment per section
 - Slide ticks inside each section
-- Slide numbers on hover
+- Adaptive slide numbers on hover
 - Clickable navigation
 
 ## Navigation
 
-Hover over the progress bar to reveal slide numbers.
+Hover over the progress bar to reveal slide numbers. Dense sections automatically show sampled numbers so labels stay readable.
 
 Click a section label to jump to the beginning of a section.
 

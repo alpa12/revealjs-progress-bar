@@ -11,6 +11,8 @@
   var EXIT_CONTENT_DELAY = 460;
   var EXIT_MOVE_DURATION = 1550;
   var EXIT_BUFFER = 120;
+  var SLIDE_NUMBER_STEPS = [1, 2, 5, 10, 25, 100];
+  var FALLBACK_MAX_VISIBLE_NUMBERS = 12;
 
   function toArray(value) {
     return Array.prototype.slice.call(value || []);
@@ -209,6 +211,64 @@
     return 1;
   }
 
+  function chooseSlideNumberStep(section, track) {
+    var count = section && section.contentSlides ? section.contentSlides.length : 0;
+    if (count <= 1) {
+      return 1;
+    }
+
+    var trackWidth = 0;
+    if (track) {
+      var rect = track.getBoundingClientRect();
+      trackWidth = rect && rect.width ? rect.width : 0;
+    }
+
+    if (trackWidth > 0) {
+      var maxSlideNumber = 0;
+      section.contentSlides.forEach(function (slide) {
+        maxSlideNumber = Math.max(maxSlideNumber, section.slideNumbers.get(slide) || 0);
+      });
+      var digitCount = String(Math.max(maxSlideNumber, count)).length;
+      var minimumGap = Math.max(28, digitCount * 14 + 10);
+      for (var i = 0; i < SLIDE_NUMBER_STEPS.length; i += 1) {
+        if ((trackWidth * SLIDE_NUMBER_STEPS[i]) / count >= minimumGap) {
+          return SLIDE_NUMBER_STEPS[i];
+        }
+      }
+      return SLIDE_NUMBER_STEPS[SLIDE_NUMBER_STEPS.length - 1];
+    }
+
+    for (var j = 0; j < SLIDE_NUMBER_STEPS.length; j += 1) {
+      if (Math.ceil(count / SLIDE_NUMBER_STEPS[j]) <= FALLBACK_MAX_VISIBLE_NUMBERS) {
+        return SLIDE_NUMBER_STEPS[j];
+      }
+    }
+    return SLIDE_NUMBER_STEPS[SLIDE_NUMBER_STEPS.length - 1];
+  }
+
+  function isSampledSlideNumber(slideIndex, step) {
+    return slideIndex === 0 || slideIndex % step === 0;
+  }
+
+  function updateSlideNumberSampling(item, section, track) {
+    if (!item || !section) {
+      return;
+    }
+
+    var step = chooseSlideNumberStep(section, track);
+    item.setAttribute("data-rpb-number-step", String(step));
+    toArray(item.querySelectorAll(".rpb-number")).forEach(function (number) {
+      var slideIndex = Number(number.getAttribute("data-rpb-slide-index"));
+      number.classList.toggle("rpb-is-sampled", !Number.isNaN(slideIndex) && isSampledSlideNumber(slideIndex, step));
+    });
+  }
+
+  function updateAllSlideNumberSampling(container, sections) {
+    toArray(container ? container.children : []).forEach(function (item, index) {
+      updateSlideNumberSampling(item, sections[index], item.querySelector(".rpb-track"));
+    });
+  }
+
   function createItem(section, index, slideNumbers, options, asButton) {
     var item = document.createElement(asButton ? "button" : "div");
     item.className = "rpb-item";
@@ -216,6 +276,7 @@
     item.style.setProperty("--rpb-progress-value", "0%");
     item.style.flexGrow = String(getSectionWeight(section, options));
     item.style.flexBasis = "0";
+    section.slideNumbers = slideNumbers;
     if (asButton) {
       item.type = "button";
       item.title = section.label;
@@ -253,7 +314,11 @@
       var number = document.createElement("span");
       number.className = "rpb-number";
       number.textContent = String(slideNumbers.get(slide) || slideIndex + 1);
+      number.setAttribute("data-rpb-slide-index", String(slideIndex));
       number.style.left = (((slideIndex + 0.5) / section.contentSlides.length) * 100).toFixed(3) + "%";
+      if (isSampledSlideNumber(slideIndex, chooseSlideNumberStep(section))) {
+        number.classList.add("rpb-is-sampled");
+      }
       numbers.appendChild(number);
     });
     track.appendChild(numbers);
@@ -280,6 +345,9 @@
       nav.appendChild(createItem(section, index, state.slideNumbers, options, true));
     });
     bindNavInteractions(deck, state, nav);
+    window.requestAnimationFrame(function () {
+      updateAllSlideNumberSampling(nav, state.sections);
+    });
     return nav;
   }
 
@@ -315,6 +383,9 @@
 
     state.sections.forEach(function (section, index) {
       preview.appendChild(createItem(section, index, state.slideNumbers, options, false));
+    });
+    window.requestAnimationFrame(function () {
+      updateAllSlideNumberSampling(preview, state.sections);
     });
 
     var fragments = document.createElement("div");
@@ -353,6 +424,7 @@
         if (track && event && track.contains(event.target)) {
           slideIndex = getSlideIndexFromTrack(track, state.sections[sectionIndex], event);
         }
+        updateSlideNumberSampling(item, state.sections[sectionIndex], track);
         setHover(state, nav, sectionIndex, slideIndex);
       }
 
@@ -420,8 +492,12 @@
     toArray(nav.children).forEach(function (item, itemIndex) {
       var isHovered = itemIndex === sectionIndex;
       item.classList.toggle("rpb-is-hover-focus", isHovered);
-      toArray(item.querySelectorAll(".rpb-number")).forEach(function (number, numberIndex) {
-        number.classList.toggle("rpb-is-hover-target", isHovered && numberIndex === slideIndex);
+      toArray(item.querySelectorAll(".rpb-number")).forEach(function (number) {
+        var numberSlideIndex = Number(number.getAttribute("data-rpb-slide-index"));
+        number.classList.toggle(
+          "rpb-is-hover-target",
+          isHovered && !Number.isNaN(numberSlideIndex) && numberSlideIndex === slideIndex
+        );
       });
     });
   }
@@ -454,8 +530,9 @@
 
   function updateCurrentNumber(item, currentIndex) {
     item.classList.toggle("rpb-has-current-number", currentIndex >= 0);
-    toArray(item.querySelectorAll(".rpb-number")).forEach(function (number, index) {
-      number.classList.toggle("rpb-is-current", index === currentIndex);
+    toArray(item.querySelectorAll(".rpb-number")).forEach(function (number) {
+      var slideIndex = Number(number.getAttribute("data-rpb-slide-index"));
+      number.classList.toggle("rpb-is-current", !Number.isNaN(slideIndex) && slideIndex === currentIndex);
     });
   }
 

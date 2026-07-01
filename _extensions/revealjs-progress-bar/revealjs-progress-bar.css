@@ -198,7 +198,7 @@
   opacity: 1;
 }
 
-.reveal .rpb-progress.rpb-is-hovering .rpb-item.rpb-is-hover-focus .rpb-number,
+.reveal .rpb-progress.rpb-is-hovering .rpb-item.rpb-is-hover-focus .rpb-number.rpb-is-sampled,
 .reveal .rpb-item.rpb-is-active .rpb-number.rpb-is-current {
   opacity: 0.58;
 }
