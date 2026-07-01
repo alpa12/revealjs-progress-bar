@@ -16,3 +16,5 @@
 .Rhistory
 .RData
 .Rproj.user/
+
+/.luarc.json
