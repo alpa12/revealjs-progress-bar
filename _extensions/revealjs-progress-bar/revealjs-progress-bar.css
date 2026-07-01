@@ -149,16 +149,21 @@
 .reveal .rpb-number {
   position: absolute;
   top: 0;
+  display: inline-block;
+  width: max-content;
   color: var(--rpb-number-color);
   font-size: 0.42em;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   opacity: 0;
+  text-align: center;
   transform: translateX(-50%);
   transition:
     color 170ms ease,
     opacity 170ms ease,
     transform 170ms ease;
+  white-space: nowrap;
 }
 
 .reveal .rpb-item.rpb-is-active .rpb-label,
