@@ -12,7 +12,7 @@
   var EXIT_MOVE_DURATION = 1550;
   var EXIT_BUFFER = 120;
   var SLIDE_NUMBER_STEPS = [1, 2, 5, 10, 25, 100];
-  var FALLBACK_MAX_VISIBLE_NUMBERS = 12;
+  var FALLBACK_MAX_VISIBLE_NUMBERS = 18;
 
   function toArray(value) {
     return Array.prototype.slice.call(value || []);
@@ -229,7 +229,7 @@
         maxSlideNumber = Math.max(maxSlideNumber, section.slideNumbers.get(slide) || 0);
       });
       var digitCount = String(Math.max(maxSlideNumber, count)).length;
-      var minimumGap = Math.max(28, digitCount * 14 + 10);
+      var minimumGap = Math.max(22, digitCount * 10 + 6);
       for (var i = 0; i < SLIDE_NUMBER_STEPS.length; i += 1) {
         if ((trackWidth * SLIDE_NUMBER_STEPS[i]) / count >= minimumGap) {
           return SLIDE_NUMBER_STEPS[i];
