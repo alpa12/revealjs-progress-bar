@@ -211,61 +211,86 @@
     return 1;
   }
 
-  function chooseSlideNumberStep(section, track) {
-    var count = section && section.contentSlides ? section.contentSlides.length : 0;
-    if (count <= 1) {
+  function getMinimumSlideNumberGap(slideNumbers) {
+    var maxSlideNumber = 0;
+    slideNumbers.forEach(function (number) {
+      maxSlideNumber = Math.max(maxSlideNumber, number);
+    });
+    var digitCount = String(Math.max(1, maxSlideNumber)).length;
+    return Math.max(22, digitCount * 10 + 6);
+  }
+
+  function getTotalTrackWidth(container) {
+    return toArray(container ? container.children : []).reduce(function (total, item) {
+      var track = item.querySelector(".rpb-track");
+      var rect = track ? track.getBoundingClientRect() : null;
+      return total + (rect && rect.width ? rect.width : 0);
+    }, 0);
+  }
+
+  function stepFitsRenderedTracks(sections, container, step, minimumGap) {
+    return toArray(container ? container.children : []).every(function (item, index) {
+      var section = sections[index];
+      var count = section && section.contentSlides ? section.contentSlides.length : 0;
+      if (count <= 1) {
+        return true;
+      }
+
+      var track = item.querySelector(".rpb-track");
+      var rect = track ? track.getBoundingClientRect() : null;
+      if (!rect || !(rect.width > 0)) {
+        return true;
+      }
+
+      return (rect.width * step) / count >= minimumGap;
+    });
+  }
+
+  function chooseSlideNumberStep(sections, slideNumbers, container) {
+    var totalSlideCount = slideNumbers ? slideNumbers.size : 0;
+    if (totalSlideCount <= 1) {
       return 1;
     }
 
-    var trackWidth = 0;
-    if (track) {
-      var rect = track.getBoundingClientRect();
-      trackWidth = rect && rect.width ? rect.width : 0;
-    }
+    var minimumGap = getMinimumSlideNumberGap(slideNumbers);
+    var totalTrackWidth = getTotalTrackWidth(container);
 
-    if (trackWidth > 0) {
-      var maxSlideNumber = 0;
-      section.contentSlides.forEach(function (slide) {
-        maxSlideNumber = Math.max(maxSlideNumber, section.slideNumbers.get(slide) || 0);
-      });
-      var digitCount = String(Math.max(maxSlideNumber, count)).length;
-      var minimumGap = Math.max(22, digitCount * 10 + 6);
+    if (totalTrackWidth > 0) {
       for (var i = 0; i < SLIDE_NUMBER_STEPS.length; i += 1) {
-        if ((trackWidth * SLIDE_NUMBER_STEPS[i]) / count >= minimumGap) {
-          return SLIDE_NUMBER_STEPS[i];
+        var step = SLIDE_NUMBER_STEPS[i];
+        var fitsTotalDensity = (totalTrackWidth * step) / totalSlideCount >= minimumGap;
+        if (fitsTotalDensity && stepFitsRenderedTracks(sections, container, step, minimumGap)) {
+          return step;
         }
       }
       return SLIDE_NUMBER_STEPS[SLIDE_NUMBER_STEPS.length - 1];
     }
 
     for (var j = 0; j < SLIDE_NUMBER_STEPS.length; j += 1) {
-      if (Math.ceil(count / SLIDE_NUMBER_STEPS[j]) <= FALLBACK_MAX_VISIBLE_NUMBERS) {
+      if (Math.ceil(totalSlideCount / SLIDE_NUMBER_STEPS[j]) <= FALLBACK_MAX_VISIBLE_NUMBERS) {
         return SLIDE_NUMBER_STEPS[j];
       }
     }
     return SLIDE_NUMBER_STEPS[SLIDE_NUMBER_STEPS.length - 1];
   }
 
-  function isSampledSlideNumber(slideIndex, step) {
-    return slideIndex === 0 || slideIndex % step === 0;
+  function isSampledSlideNumber(slideNumber, step) {
+    return slideNumber === 1 || step <= 1 || slideNumber % step === 0;
   }
 
-  function updateSlideNumberSampling(item, section, track) {
-    if (!item || !section) {
+  function updateSlideNumberSampling(container, sections, slideNumbers) {
+    if (!container || !sections || !slideNumbers) {
       return;
     }
 
-    var step = chooseSlideNumberStep(section, track);
-    item.setAttribute("data-rpb-number-step", String(step));
-    toArray(item.querySelectorAll(".rpb-number")).forEach(function (number) {
-      var slideIndex = Number(number.getAttribute("data-rpb-slide-index"));
-      number.classList.toggle("rpb-is-sampled", !Number.isNaN(slideIndex) && isSampledSlideNumber(slideIndex, step));
-    });
-  }
-
-  function updateAllSlideNumberSampling(container, sections) {
-    toArray(container ? container.children : []).forEach(function (item, index) {
-      updateSlideNumberSampling(item, sections[index], item.querySelector(".rpb-track"));
+    var step = chooseSlideNumberStep(sections, slideNumbers, container);
+    container.setAttribute("data-rpb-number-step", String(step));
+    toArray(container.children).forEach(function (item) {
+      item.setAttribute("data-rpb-number-step", String(step));
+      toArray(item.querySelectorAll(".rpb-number")).forEach(function (number) {
+        var slideNumber = Number(number.getAttribute("data-rpb-slide-number"));
+        number.classList.toggle("rpb-is-sampled", !Number.isNaN(slideNumber) && isSampledSlideNumber(slideNumber, step));
+      });
     });
   }
 
@@ -276,7 +301,6 @@
     item.style.setProperty("--rpb-progress-value", "0%");
     item.style.flexGrow = String(getSectionWeight(section, options));
     item.style.flexBasis = "0";
-    section.slideNumbers = slideNumbers;
     if (asButton) {
       item.type = "button";
       item.title = section.label;
@@ -312,13 +336,12 @@
     numbers.setAttribute("aria-hidden", "true");
     section.contentSlides.forEach(function (slide, slideIndex) {
       var number = document.createElement("span");
+      var slideNumber = slideNumbers.get(slide) || slideIndex + 1;
       number.className = "rpb-number";
-      number.textContent = String(slideNumbers.get(slide) || slideIndex + 1);
+      number.textContent = String(slideNumber);
       number.setAttribute("data-rpb-slide-index", String(slideIndex));
+      number.setAttribute("data-rpb-slide-number", String(slideNumber));
       number.style.left = (((slideIndex + 0.5) / section.contentSlides.length) * 100).toFixed(3) + "%";
-      if (isSampledSlideNumber(slideIndex, chooseSlideNumberStep(section))) {
-        number.classList.add("rpb-is-sampled");
-      }
       numbers.appendChild(number);
     });
     track.appendChild(numbers);
@@ -346,7 +369,7 @@
     });
     bindNavInteractions(deck, state, nav);
     window.requestAnimationFrame(function () {
-      updateAllSlideNumberSampling(nav, state.sections);
+      updateSlideNumberSampling(nav, state.sections, state.slideNumbers);
     });
     return nav;
   }
@@ -385,7 +408,7 @@
       preview.appendChild(createItem(section, index, state.slideNumbers, options, false));
     });
     window.requestAnimationFrame(function () {
-      updateAllSlideNumberSampling(preview, state.sections);
+      updateSlideNumberSampling(preview, state.sections, state.slideNumbers);
     });
 
     var fragments = document.createElement("div");
@@ -424,7 +447,7 @@
         if (track && event && track.contains(event.target)) {
           slideIndex = getSlideIndexFromTrack(track, state.sections[sectionIndex], event);
         }
-        updateSlideNumberSampling(item, state.sections[sectionIndex], track);
+        updateSlideNumberSampling(nav, state.sections, state.slideNumbers);
         setHover(state, nav, sectionIndex, slideIndex);
       }
 
@@ -798,6 +821,20 @@
           syncNav(deck, state, deck.getCurrentSlide ? deck.getCurrentSlide() : null);
         }
 
+        function updateRenderedSlideNumberSampling() {
+          var nav = document.getElementById(NAV_ID);
+          if (nav) {
+            updateSlideNumberSampling(nav, state.sections, state.slideNumbers);
+          }
+
+          if (state.overviewSlide) {
+            var preview = state.overviewSlide.querySelector(".rpb-overview-preview");
+            if (preview) {
+              updateSlideNumberSampling(preview, state.sections, state.slideNumbers);
+            }
+          }
+        }
+
         deck.on("ready", function (event) {
           initialize();
           syncNav(deck, state, event.currentSlide);
@@ -834,6 +871,10 @@
         if (deck.isReady && deck.isReady()) {
           initialize();
         }
+
+        window.addEventListener("resize", function () {
+          window.requestAnimationFrame(updateRenderedSlideNumberSampling);
+        });
       }
     };
   }
