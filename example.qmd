@@ -1,0 +1,134 @@
+---
+title: "Revealjs Progress Bar"
+subtitle: "A section-aware progress bar for Quarto presentations"
+author: "Alexandre Parent"
+format:
+  revealjs:
+    progress: false
+    theme: default
+    css: custom.css
+    progress-bar:
+      overview: true
+      animate-overview-exit: true
+      section-widths: proportional
+filters:
+  - revealjs-progress-bar
+---
+
+## Why This Extension?
+
+`revealjs-progress-bar` adds a section-aware progress bar to Quarto RevealJS presentations.
+
+It is designed for decks where the audience should know where they are in the story, not just how many slides remain.
+
+## Presentation plan {.progress-overview}
+
+# Features {data-progress-label="Features"}
+
+## Features overview
+
+- One segment per section
+- Slide ticks inside each section
+- Slide numbers on hover
+- Clickable navigation
+
+## Navigation
+
+Hover over the progress bar to reveal slide numbers.
+
+Click a section label to jump to the beginning of a section.
+
+Click inside a section track to jump to a specific slide in that section.
+
+## Fragments
+
+Fragments do not count as progress.
+
+. . .
+
+This fragment appears without advancing the progress bar.
+
+. . .
+
+So does this one.
+
+# Vertical Sections {data-progress-label="Vertical"}
+
+## Title Slides Are Ignored
+
+This section started with a title slide.
+
+That title slide establishes the section, but it does not count as progress.
+
+## First Content Slide
+
+The bar starts advancing on the first content slide in the section.
+
+## Second Content Slide
+
+The tick marks show how many content slides are in this section.
+
+# Customization {data-progress-label="Style"}
+
+## CSS Variables
+
+You can customize the visual style using CSS variables.
+
+```css
+:root {
+  --rpb-fill-color: #2563eb;
+  --rpb-track-color: rgba(37, 99, 235, 0.18);
+  --rpb-label-active-color: #111827;
+}
+```
+
+## YAML Options
+
+```yaml
+format:
+  revealjs:
+    progress: false
+    progress-bar:
+      overview: true
+      animate-overview-exit: true
+      section-widths: equal
+filters:
+  - revealjs-progress-bar
+```
+
+```yaml
+progress-bar:
+  overview: true
+  animate-overview-exit: true
+  section-widths: equal
+```
+
+Use `section-widths: proportional` when each slide should occupy the same width in the bar.
+
+## Hide On One Slide {data-progress-bar="false"}
+
+This slide is still part of the progress calculation, but the progress bar is hidden.
+
+Use this for appendix slides, transition slides, or moments where the slide needs a cleaner stage.
+
+## Section Labels
+
+Use `data-progress-label` for short labels in the progress bar.
+
+```markdown
+# Long Section Title {data-progress-label="Short"}
+```
+
+The extension also supports `data-section-label` for compatibility with older decks.
+
+# Finish {data-progress-label="End"}
+
+## Install
+
+```bash
+quarto add alpa12/revealjs-progress-bar
+```
+
+## Thank You
+
+The deck is complete.

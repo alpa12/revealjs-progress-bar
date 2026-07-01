@@ -1,0 +1,7 @@
+:root {
+  --rpb-fill-color: #2563eb;
+  --rpb-track-color: rgba(37, 99, 235, 0.16);
+  --rpb-label-active-color: #111827;
+  --rpb-label-color: rgba(17, 24, 39, 0.58);
+  --rpb-number-color: rgba(17, 24, 39, 0.72);
+}

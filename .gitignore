@@ -1,0 +1,18 @@
+# Quarto render artifacts
+/.quarto/
+*_cache/
+*_files/
+*.html
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS/editor files
+.DS_Store
+.vscode/
+
+# R session/project state
+.Rhistory
+.RData
+.Rproj.user/
