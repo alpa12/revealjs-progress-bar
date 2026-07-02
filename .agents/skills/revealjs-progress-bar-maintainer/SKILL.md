@@ -29,7 +29,6 @@ format:
   revealjs:
     progress: false
     progress-bar:
-      overview: true
       animate-overview-exit: true
       section-widths: equal
 filters:
@@ -84,11 +83,8 @@ Keep DOM and CSS classes prefixed with `rpb-*`.
 - Hover shows ticks/slide numbers and makes the active/hovered bar thicker with larger labels.
 - Section labels resolve in this order:
   1. `data-progress-label`
-  2. `progress-label`
-  3. `data-section-label`
-  4. first `h1`/`h2` text
-- Hide the bar on one slide with `data-progress-bar="false"`. This hides display only; the slide remains in progress calculation.
-- Also support `.rpb-hide-progress`, `.hide-progress-bar`, and `data-progressbar` for hiding when already implemented.
+  2. first `h1`/`h2` text
+- Hide the bar on one slide with `.hide-progress-bar`. This hides display only; the slide remains in progress calculation.
 
 ## Overview Slide Requirements
 
@@ -98,9 +94,8 @@ Users mark the overview slide with:
 ## Presentation plan {.progress-overview}
 ```
 
-When `progress-bar.overview: true`:
+When a `.progress-overview` slide exists:
 
-- If no `.progress-overview` exists, render normally and warn in the browser console.
 - The progress bar preview on the overview slide must use the same dimensions and label sizing as the normal bar.
 - The large currently selected section title above the preview should look like a centered H1.
 - During overview exit animation:
@@ -168,7 +163,7 @@ Visually validate:
 - Hover ticks, hover slide numbers, and thicker bar.
 - Click navigation by label and track.
 - `section-widths: equal` and `section-widths: proportional`.
-- `data-progress-bar="false"` hides the bar only for that slide.
+- `.hide-progress-bar` hides the bar only for that slide.
 - Fragments do not advance progress.
 - Vertical section title slides do not count as content.
 

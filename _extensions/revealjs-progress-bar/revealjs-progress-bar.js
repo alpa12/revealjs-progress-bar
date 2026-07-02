@@ -4,7 +4,6 @@
   var NAV_ID = "rpb-progress-bar";
   var INSTANCE_KEY = "__revealProgressBarInitialized";
   var DEFAULTS = {
-    overview: false,
     animateOverviewExit: true,
     sectionWidths: "equal"
   };
@@ -32,7 +31,6 @@
       (config && (config["progress-bar"] || config.progressBar)) ||
       {};
     return {
-      overview: supplied.overview === undefined ? DEFAULTS.overview : !!supplied.overview,
       animateOverviewExit:
         supplied.animateOverviewExit === undefined
           ? DEFAULTS.animateOverviewExit
@@ -74,11 +72,7 @@
 
   function resolveLabel(slide, fallback) {
     var heading = getHeading(slide);
-    var label = getAttributeFromSlideOrHeading(slide, heading, [
-      "data-progress-label",
-      "progress-label",
-      "data-section-label"
-    ]);
+    var label = getAttributeFromSlideOrHeading(slide, heading, ["data-progress-label"]);
     if (label) {
       return label;
     }
@@ -124,7 +118,7 @@
   function collectSections(deck, options) {
     var slidesRoot = getSlidesRoot(deck);
     var markedOverviewSlide = findOverviewSlide(slidesRoot);
-    var overviewSlide = options.overview ? markedOverviewSlide : null;
+    var overviewSlide = markedOverviewSlide || null;
     var sections = [];
 
     function isProgressSlide(slide) {
@@ -375,12 +369,7 @@
   }
 
   function renderOverview(state, options) {
-    if (!options.overview) {
-      return;
-    }
-
     if (!state.overviewSlide) {
-      console.warn("[revealjs-progress-bar] overview is enabled, but no slide with class .progress-overview was found.");
       return;
     }
 
@@ -589,11 +578,6 @@
     );
   }
 
-  function hasDisabledProgressValue(value) {
-    value = value ? value.trim().toLowerCase() : "";
-    return value === "false" || value === "0" || value === "off" || value === "hide" || value === "hidden";
-  }
-
   function disablesProgressBar(slide) {
     if (!slide) {
       return false;
@@ -606,12 +590,7 @@
     }
 
     return candidates.some(function (candidate) {
-      return (
-        candidate.classList.contains("rpb-hide-progress") ||
-        candidate.classList.contains("hide-progress-bar") ||
-        hasDisabledProgressValue(candidate.getAttribute("data-progress-bar")) ||
-        hasDisabledProgressValue(candidate.getAttribute("data-progressbar"))
-      );
+      return candidate.classList.contains("hide-progress-bar");
     });
   }
 

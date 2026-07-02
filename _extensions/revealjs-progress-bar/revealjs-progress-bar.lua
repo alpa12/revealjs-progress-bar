@@ -71,14 +71,10 @@ function Meta(meta)
   end
 
   local config = get_progress_bar_config(meta) or {}
-  local overview = boolify(config.overview)
   local animate_overview_exit = boolify(config.animateOverviewExit or config["animate-overview-exit"])
   local section_widths = stringify(config.sectionWidths or config["section-widths"])
 
   local fields = {}
-  if overview ~= nil then
-    table.insert(fields, '"overview": ' .. tostring(overview))
-  end
   if animate_overview_exit ~= nil then
     table.insert(fields, '"animateOverviewExit": ' .. tostring(animate_overview_exit))
   end

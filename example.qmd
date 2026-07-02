@@ -4,11 +4,11 @@ subtitle: "A section-aware progress bar for Quarto presentations"
 author: "Alexandre Parent"
 format:
   revealjs:
+    center: true
     progress: false
     theme: default
     css: custom.css
     progress-bar:
-      overview: true
       animate-overview-exit: true
       section-widths: proportional
 filters:
@@ -89,7 +89,6 @@ format:
   revealjs:
     progress: false
     progress-bar:
-      overview: true
       animate-overview-exit: true
       section-widths: equal
 filters:
@@ -98,18 +97,23 @@ filters:
 
 ```yaml
 progress-bar:
-  overview: true
   animate-overview-exit: true
   section-widths: equal
 ```
 
 Use `section-widths: proportional` when each slide should occupy the same width in the bar.
 
-## Hide On One Slide {data-progress-bar="false"}
+## Hide On One Slide {.hide-progress-bar}
 
-This slide is still part of the progress calculation, but the progress bar is hidden.
+Add `.hide-progress-bar` to a slide heading to hide the progress bar on that slide only.
 
-Use this for appendix slides, transition slides, or moments where the slide needs a cleaner stage.
+This slide is still part of the progress calculation. Only the bar display is hidden, and the bar appears again automatically on the next regular progress slide.
+
+Use this for appendix slides, transition slides, or moments where the slide needs a cleaner stage:
+
+```markdown
+## Appendix Detail {.hide-progress-bar}
+```
 
 ## Section Labels
 
@@ -118,8 +122,6 @@ Use `data-progress-label` for short labels in the progress bar.
 ```markdown
 # Long Section Title {data-progress-label="Short"}
 ```
-
-The extension also supports `data-section-label` for compatibility with older decks.
 
 # Finish {data-progress-label="End"}
 

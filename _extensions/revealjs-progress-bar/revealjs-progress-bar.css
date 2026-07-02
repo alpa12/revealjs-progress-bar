@@ -213,7 +213,14 @@
 .reveal .progress-overview.rpb-overview-slide {
   position: relative;
   display: block !important;
+  top: 0 !important;
+  height: 100%;
   text-align: center;
+  transform: none !important;
+}
+
+.reveal .progress-overview.rpb-overview-slide > :not(h1):not(h2):not(.rpb-overview-shell) {
+  visibility: hidden;
 }
 
 .reveal .rpb-overview-shell {

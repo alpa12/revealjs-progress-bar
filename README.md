@@ -2,7 +2,7 @@
 
 A section-aware progress bar for Quarto RevealJS presentations.
 
-`revealjs-progress-bar` replaces the default linear RevealJS progress indicator with a compact navigation bar that tracks progress by section. It supports short section labels, slide ticks, adaptive hover slide numbers, click navigation, and an optional overview slide.
+`revealjs-progress-bar` replaces the default linear RevealJS progress indicator with a compact navigation bar that tracks progress by section. It supports short section labels, slide ticks, adaptive hover slide numbers, click navigation, and an overview slide.
 
 ## Installation
 
@@ -33,20 +33,17 @@ The extension can enhance a slide marked with `.progress-overview` into a presen
 ## Presentation plan {.progress-overview}
 ```
 
-Enable the overview in your YAML:
+The `.progress-overview` class is enough to enable the overview. Other progress bar options can stay in YAML:
 
 ```yaml
 format:
   revealjs:
     progress: false
     progress-bar:
-      overview: true
       animate-overview-exit: true
 filters:
   - revealjs-progress-bar
 ```
-
-If `overview: true` but no `.progress-overview` slide exists, the deck still renders normally and the extension logs a warning in the browser console.
 
 ## Section Labels
 
@@ -56,23 +53,22 @@ Use `data-progress-label` when the full section title is too long for the progre
 # Detailed Section Title {data-progress-label="Short"}
 ```
 
-The extension also supports `data-section-label` for compatibility with older decks. If no label is provided, the first `h1` or `h2` text is used.
+If no label is provided, the first `h1` or `h2` text is used.
 
 ## Hide The Bar On One Slide
 
-Add `data-progress-bar="false"` to a slide to hide the progress bar on that slide only:
+Add `.hide-progress-bar` to a slide heading to hide the progress bar on that slide only:
 
 ```markdown
-## Appendix Detail {data-progress-bar="false"}
+## Appendix Detail {.hide-progress-bar}
 ```
 
-The slide remains part of the progress calculation; only the bar display is hidden.
+The slide remains part of the progress calculation. This only hides the bar display while the audience is on that slide, which is useful for appendix material, transition slides, or slides that need an uncluttered stage. The bar appears again automatically on the next regular progress slide.
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `progress-bar.overview` | `false` | Enhance a slide with `.progress-overview` into an overview slide. |
 | `progress-bar.animate-overview-exit` | `true` | Animate the overview progress bar into the top navigation bar before advancing. |
 | `progress-bar.section-widths` | `"equal"` | Use `"equal"` for equal section widths or `"proportional"` for equal slide widths. |
 
