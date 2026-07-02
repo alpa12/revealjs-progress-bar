@@ -73,6 +73,8 @@ function Meta(meta)
   local config = get_progress_bar_config(meta) or {}
   local animate_overview_exit = boolify(config.animateOverviewExit or config["animate-overview-exit"])
   local section_widths = stringify(config.sectionWidths or config["section-widths"])
+  local show_slide_numbers = boolify(config.showSlideNumbers or config["show-slide-numbers"])
+  local counted_slides = stringify(config.countedSlides or config["counted-slides"])
 
   local fields = {}
   if animate_overview_exit ~= nil then
@@ -80,6 +82,12 @@ function Meta(meta)
   end
   if section_widths ~= nil then
     table.insert(fields, '"sectionWidths": ' .. js_string(section_widths))
+  end
+  if show_slide_numbers ~= nil then
+    table.insert(fields, '"showSlideNumbers": ' .. tostring(show_slide_numbers))
+  end
+  if counted_slides ~= nil then
+    table.insert(fields, '"countedSlides": ' .. js_string(counted_slides))
   end
 
   local dir = script_dir()

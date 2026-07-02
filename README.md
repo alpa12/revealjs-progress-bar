@@ -77,6 +77,8 @@ The slide remains part of the progress calculation. This only hides the bar disp
 | --- | --- | --- |
 | `progress-bar.animate-overview-exit` | `true` | Animate the overview progress bar into the top navigation bar before advancing. |
 | `progress-bar.section-widths` | `"equal"` | Use `"equal"` for equal section widths or `"proportional"` for equal slide widths. |
+| `progress-bar.show-slide-numbers` | `true` | Show adaptive slide numbers on the progress bar. Set to `false` to hide all slide numbers. |
+| `progress-bar.counted-slides` | `"all"` | Use `"all"` to number slides like Quarto/RevealJS, including title, overview, and section title slides. Use `"main"` to number only progress content slides. |
 
 ## Styling
 
@@ -99,7 +101,8 @@ Customize the bar with CSS variables:
 - Fragments do not count as progress.
 - The deck title slide is excluded.
 - A marked `.progress-overview` slide is excluded.
-- When `.progress-overview` exists, all slides before it are excluded from the progress bar and slide numbers.
+- When `.progress-overview` exists, all slides before it are excluded from the progress bar. They are also excluded from slide numbers when `counted-slides: main`.
+- By default, displayed slide numbers use all RevealJS slides so they match Quarto slide numbering. Set `counted-slides: main` to number only progress content slides.
 - Hover slide numbers use a global sampling step for dense decks while respecting tight section widths.
 - Section title slides are ignored when a vertical section has a title slide followed by content slides.
 

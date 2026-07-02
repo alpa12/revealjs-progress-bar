@@ -11,6 +11,8 @@ format:
     progress-bar:
       animate-overview-exit: true
       section-widths: proportional
+      show-slide-numbers: true
+      counted-slides: all
 filters:
   - revealjs-progress-bar
 ---
@@ -91,6 +93,8 @@ format:
     progress-bar:
       animate-overview-exit: true
       section-widths: equal
+      show-slide-numbers: true
+      counted-slides: all
 filters:
   - revealjs-progress-bar
 ```
@@ -99,9 +103,13 @@ filters:
 progress-bar:
   animate-overview-exit: true
   section-widths: equal
+  show-slide-numbers: true
+  counted-slides: all
 ```
 
 Use `section-widths: proportional` when each slide should occupy the same width in the bar.
+
+Set `show-slide-numbers: false` to hide numbers on the bar. Use `counted-slides: main` to number only progress content slides instead of matching Quarto's full slide numbering.
 
 ## Hide On One Slide {.hide-progress-bar}
 

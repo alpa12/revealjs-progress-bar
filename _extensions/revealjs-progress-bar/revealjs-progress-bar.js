@@ -5,7 +5,9 @@
   var INSTANCE_KEY = "__revealProgressBarInitialized";
   var DEFAULTS = {
     animateOverviewExit: true,
-    sectionWidths: "equal"
+    sectionWidths: "equal",
+    showSlideNumbers: true,
+    countedSlides: "all"
   };
   var EXIT_CONTENT_DELAY = 460;
   var EXIT_MOVE_DURATION = 1550;
@@ -25,6 +27,10 @@
     return value === "proportional" ? "proportional" : "equal";
   }
 
+  function normalizeCountedSlides(value) {
+    return value === "main" ? "main" : "all";
+  }
+
   function mergeOptions(config) {
     var supplied =
       window.RevealProgressBarOptions ||
@@ -35,7 +41,12 @@
         supplied.animateOverviewExit === undefined
           ? DEFAULTS.animateOverviewExit
           : !!supplied.animateOverviewExit,
-      sectionWidths: normalizeWidthMode(supplied.sectionWidths || supplied["section-widths"])
+      sectionWidths: normalizeWidthMode(supplied.sectionWidths || supplied["section-widths"]),
+      showSlideNumbers:
+        supplied.showSlideNumbers === undefined && supplied["show-slide-numbers"] === undefined
+          ? DEFAULTS.showSlideNumbers
+          : !!(supplied.showSlideNumbers !== undefined ? supplied.showSlideNumbers : supplied["show-slide-numbers"]),
+      countedSlides: normalizeCountedSlides(supplied.countedSlides || supplied["counted-slides"])
     };
   }
 
@@ -182,8 +193,40 @@
     };
   }
 
-  function buildSlideNumbers(sections) {
+  function getNumberedSlides(deck, slidesRoot) {
+    if (deck && typeof deck.getSlides === "function") {
+      return deck.getSlides().filter(function (slide) {
+        return slide && !(slide.classList && slide.classList.contains("stack"));
+      });
+    }
+
+    var slides = [];
+    getTopSections(slidesRoot).forEach(function (topSection) {
+      var nestedSlides = getNestedSlides(topSection);
+      if (nestedSlides.length > 0) {
+        nestedSlides.forEach(function (slide) {
+          slides.push(slide);
+        });
+        return;
+      }
+      slides.push(topSection);
+    });
+    return slides;
+  }
+
+  function buildSlideNumbers(deck, sections, options) {
     var map = new Map();
+
+    if (options.countedSlides === "all") {
+      getNumberedSlides(deck, getSlidesRoot(deck)).forEach(function (slide, index) {
+        if (!map.has(slide)) {
+          var revealPastCount = deck && typeof deck.getSlidePastCount === "function" ? deck.getSlidePastCount(slide) : null;
+          map.set(slide, typeof revealPastCount === "number" ? revealPastCount + 1 : index + 1);
+        }
+      });
+      return map;
+    }
+
     var number = 1;
     sections.forEach(function (section) {
       section.contentSlides.forEach(function (slide) {
@@ -323,20 +366,22 @@
       track.appendChild(ticks);
     }
 
-    var numbers = document.createElement("span");
-    numbers.className = "rpb-numbers";
-    numbers.setAttribute("aria-hidden", "true");
-    section.contentSlides.forEach(function (slide, slideIndex) {
-      var number = document.createElement("span");
-      var slideNumber = slideNumbers.get(slide) || slideIndex + 1;
-      number.className = "rpb-number";
-      number.textContent = String(slideNumber);
-      number.setAttribute("data-rpb-slide-index", String(slideIndex));
-      number.setAttribute("data-rpb-slide-number", String(slideNumber));
-      number.style.left = (((slideIndex + 0.5) / section.contentSlides.length) * 100).toFixed(3) + "%";
-      numbers.appendChild(number);
-    });
-    track.appendChild(numbers);
+    if (options.showSlideNumbers) {
+      var numbers = document.createElement("span");
+      numbers.className = "rpb-numbers";
+      numbers.setAttribute("aria-hidden", "true");
+      section.contentSlides.forEach(function (slide, slideIndex) {
+        var number = document.createElement("span");
+        var slideNumber = slideNumbers.get(slide) || slideIndex + 1;
+        number.className = "rpb-number";
+        number.textContent = String(slideNumber);
+        number.setAttribute("data-rpb-slide-index", String(slideIndex));
+        number.setAttribute("data-rpb-slide-number", String(slideNumber));
+        number.style.left = (((slideIndex + 0.5) / section.contentSlides.length) * 100).toFixed(3) + "%";
+        numbers.appendChild(number);
+      });
+      track.appendChild(numbers);
+    }
 
     item.appendChild(label);
     item.appendChild(track);
@@ -788,7 +833,7 @@
           state.sections = collected.sections;
           state.overviewSlide = collected.overviewSlide;
           state.progressStartSlide = collected.progressStartSlide;
-          state.slideNumbers = buildSlideNumbers(state.sections);
+          state.slideNumbers = buildSlideNumbers(deck, state.sections, options);
           renderOverview(state, options);
           renderNav(deck, state, options);
           if (deck.sync) {
