@@ -56,24 +56,22 @@
 
   function getAttributeFromSlideOrHeading(slide, heading, names) {
     for (var i = 0; i < names.length; i += 1) {
-      var slideValue = slide ? slide.getAttribute(names[i]) : "";
-      if (slideValue && slideValue.trim()) {
-        return slideValue.trim();
+      if (slide && slide.hasAttribute(names[i])) {
+        return (slide.getAttribute(names[i]) || "").trim();
       }
 
-      var headingValue = heading ? heading.getAttribute(names[i]) : "";
-      if (headingValue && headingValue.trim()) {
-        return headingValue.trim();
+      if (heading && heading.hasAttribute(names[i])) {
+        return (heading.getAttribute(names[i]) || "").trim();
       }
     }
 
-    return "";
+    return null;
   }
 
   function resolveLabel(slide, fallback) {
     var heading = getHeading(slide);
     var label = getAttributeFromSlideOrHeading(slide, heading, ["data-progress-label"]);
-    if (label) {
+    if (label !== null) {
       return label;
     }
 
@@ -297,8 +295,8 @@
     item.style.flexBasis = "0";
     if (asButton) {
       item.type = "button";
-      item.title = section.label;
-      item.setAttribute("aria-label", "Go to section " + section.label);
+      item.title = section.fullTitle || section.label;
+      item.setAttribute("aria-label", "Go to section " + (section.fullTitle || section.label));
     }
 
     var label = document.createElement("span");

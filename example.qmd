@@ -123,7 +123,7 @@ Use `data-progress-label` for short labels in the progress bar.
 # Long Section Title {data-progress-label="Short"}
 ```
 
-# Finish {data-progress-label="End"}
+# Finish {data-progress-label=""}
 
 ## Install
 

@@ -53,7 +53,13 @@ Use `data-progress-label` when the full section title is too long for the progre
 # Detailed Section Title {data-progress-label="Short"}
 ```
 
-If no label is provided, the first `h1` or `h2` text is used.
+Use an empty label to reserve section width without showing text:
+
+```markdown
+# Short Section {data-progress-label=""}
+```
+
+If no label attribute is provided, the first `h1` or `h2` text is used.
 
 ## Hide The Bar On One Slide
 
