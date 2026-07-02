@@ -7,7 +7,8 @@
     animateOverviewExit: true,
     sectionWidths: "equal",
     showSlideNumbers: true,
-    countedSlides: "all"
+    countedSlides: "all",
+    overrideNativeSlideNumbers: false
   };
   var EXIT_CONTENT_DELAY = 460;
   var EXIT_MOVE_DURATION = 1550;
@@ -46,7 +47,15 @@
         supplied.showSlideNumbers === undefined && supplied["show-slide-numbers"] === undefined
           ? DEFAULTS.showSlideNumbers
           : !!(supplied.showSlideNumbers !== undefined ? supplied.showSlideNumbers : supplied["show-slide-numbers"]),
-      countedSlides: normalizeCountedSlides(supplied.countedSlides || supplied["counted-slides"])
+      countedSlides: normalizeCountedSlides(supplied.countedSlides || supplied["counted-slides"]),
+      overrideNativeSlideNumbers:
+        supplied.overrideNativeSlideNumbers === undefined && supplied["override-native-slide-numbers"] === undefined
+          ? DEFAULTS.overrideNativeSlideNumbers
+          : !!(
+              supplied.overrideNativeSlideNumbers !== undefined
+                ? supplied.overrideNativeSlideNumbers
+                : supplied["override-native-slide-numbers"]
+            )
     };
   }
 
@@ -681,6 +690,88 @@
     });
   }
 
+  function getNativeSlideNumberElement(deck) {
+    var revealElement = deck && deck.getRevealElement ? deck.getRevealElement() : document.querySelector(".reveal");
+    return revealElement ? revealElement.querySelector(".slide-number") : null;
+  }
+
+  function escapeAttribute(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function getSlideHref(deck, slide) {
+    if (deck && deck.location && typeof deck.location.getHash === "function") {
+      return "#" + deck.location.getHash(slide);
+    }
+    if (slide && slide.id) {
+      return "#/" + slide.id;
+    }
+    return window.location.hash || "#";
+  }
+
+  function getNativeSlideNumberFormat(deck) {
+    var config = deck && typeof deck.getConfig === "function" ? deck.getConfig() : {};
+    return config ? config.slideNumber : null;
+  }
+
+  function shouldShowNativeTotal(format) {
+    return format === "c/t";
+  }
+
+  function renderNativeSlideNumber(number, total, href, includeTotal) {
+    var escapedHref = escapeAttribute(href);
+    if (!includeTotal) {
+      return '<a href="' + escapedHref + '"><span class="slide-number-a">' + number + "</span></a>";
+    }
+    return (
+      '<a href="' +
+      escapedHref +
+      '"><span class="slide-number-a">' +
+      number +
+      '</span><span class="slide-number-delimiter">/</span><span class="slide-number-b">' +
+      total +
+      "</span></a>"
+    );
+  }
+
+  function syncNativeSlideNumber(deck, state, options, currentSlide) {
+    if (!options.overrideNativeSlideNumbers || options.countedSlides !== "main") {
+      return;
+    }
+
+    var nativeNumber = getNativeSlideNumberElement(deck);
+    if (!nativeNumber) {
+      return;
+    }
+
+    var slideNumber = state.slideNumbers.get(currentSlide);
+    nativeNumber.setAttribute("data-rpb-overridden", "true");
+
+    if (!slideNumber) {
+      nativeNumber.innerHTML = "";
+      nativeNumber.style.visibility = "hidden";
+      return;
+    }
+
+    nativeNumber.style.removeProperty("visibility");
+    nativeNumber.innerHTML = renderNativeSlideNumber(
+      slideNumber,
+      state.slideNumbers.size,
+      getSlideHref(deck, currentSlide),
+      shouldShowNativeTotal(getNativeSlideNumberFormat(deck))
+    );
+  }
+
+  function scheduleNativeSlideNumberSync(deck, state, options, currentSlide) {
+    window.requestAnimationFrame(function () {
+      syncNativeSlideNumber(deck, state, options, currentSlide || (deck.getCurrentSlide ? deck.getCurrentSlide() : null));
+    });
+  }
+
   function getOverviewSelectedIndex(slide) {
     var selected = -1;
     toArray(slide ? slide.querySelectorAll(".rpb-overview-step.visible") : []).forEach(function (step) {
@@ -841,6 +932,7 @@
           }
           syncOverview(state);
           syncNav(deck, state, deck.getCurrentSlide ? deck.getCurrentSlide() : null);
+          scheduleNativeSlideNumberSync(deck, state, options);
         }
 
         function updateRenderedSlideNumberSampling() {
@@ -860,6 +952,7 @@
         deck.on("ready", function (event) {
           initialize();
           syncNav(deck, state, event.currentSlide);
+          scheduleNativeSlideNumberSync(deck, state, options, event.currentSlide);
         });
 
         deck.on("slidechanged", function (event) {
@@ -867,6 +960,7 @@
             finishOverviewExit(deck, state);
           }
           syncNav(deck, state, event.currentSlide);
+          scheduleNativeSlideNumberSync(deck, state, options, event.currentSlide);
           if (event.currentSlide === state.overviewSlide) {
             syncOverview(state);
           }
