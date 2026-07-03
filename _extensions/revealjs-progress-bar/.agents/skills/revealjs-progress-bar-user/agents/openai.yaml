@@ -1,0 +1,4 @@
+interface:
+  display_name: "RevealJS Progress Bar User"
+  short_description: "Help authors use revealjs-progress-bar"
+  default_prompt: "Use $revealjs-progress-bar-user to configure a Quarto RevealJS deck with section-aware progress navigation."

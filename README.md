@@ -124,6 +124,25 @@ quarto preview example.qmd
 
 The files installed by Quarto live in `_extensions/revealjs-progress-bar/`. The root `README.md` and `example.qmd` are for documentation and development.
 
+## Agent User Skill
+
+This repository includes an Agent skill for authors who want help using the extension:
+
+```text
+_extensions/revealjs-progress-bar/.agents/skills/revealjs-progress-bar-user/
+```
+
+If another project installs this Quarto extension with `quarto add alpa12/revealjs-progress-bar`, the extension is copied under `_extensions/revealjs-progress-bar/`. The bundled skill will not appear automatically in that project's skill list, because Codex discovers repository skills from `.agents/skills`, not from nested extension folders.
+
+To install the user skill for personal use across repositories after running `quarto add`, copy the skill folder to the current user skills location:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R _extensions/revealjs-progress-bar/.agents/skills/revealjs-progress-bar-user ~/.agents/skills/
+```
+
+Codex usually detects skill changes automatically. If the skill does not appear in the skill selector or via `$revealjs-progress-bar-user`, restart Codex.
+
 ## License
 
 MIT
