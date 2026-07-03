@@ -4,6 +4,7 @@ subtitle: "A section-aware progress bar for Quarto presentations"
 author: "Alexandre Parent"
 format:
   revealjs:
+    embed-resources: true
     center: false
     progress: false
     slide-number: c/t
