@@ -41,7 +41,7 @@ jobs:
       - name: Render example
         run: |
           mkdir -p _site
-          quarto render example.qmd --to html --output index.html --output-dir _site
+          quarto render example.qmd --to revealjs --output index.html --output-dir _site
           touch _site/.nojekyll
 
       - name: Configure Pages
