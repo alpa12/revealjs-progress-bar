@@ -4,7 +4,7 @@ subtitle: "A section-aware progress bar for Quarto presentations"
 author: "Alexandre Parent"
 format:
   revealjs:
-    center: true
+    center: false
     progress: false
     slide-number: c/t
     theme: default
@@ -86,7 +86,7 @@ You can customize the visual style using CSS variables.
 }
 ```
 
-## YAML Options
+## YAML Options {.scrollable}
 
 ```yaml
 format:
@@ -101,15 +101,6 @@ format:
       override-native-slide-numbers: true
 filters:
   - revealjs-progress-bar
-```
-
-```yaml
-progress-bar:
-  animate-overview-exit: true
-  section-widths: equal
-  show-slide-numbers: true
-  counted-slides: main
-  override-native-slide-numbers: true
 ```
 
 Use `section-widths: proportional` when each slide should occupy the same width in the bar.

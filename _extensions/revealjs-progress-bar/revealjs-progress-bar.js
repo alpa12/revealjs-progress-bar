@@ -427,7 +427,6 @@
 
     var slide = state.overviewSlide;
     slide.classList.add("rpb-overview-slide");
-    slide.setAttribute("data-visibility", "uncounted");
 
     var oldShell = slide.querySelector(".rpb-overview-shell");
     if (oldShell) {
@@ -732,10 +731,29 @@
       escapedHref +
       '"><span class="slide-number-a">' +
       number +
-      '</span><span class="slide-number-delimiter">/</span><span class="slide-number-b">' +
+      '</span><span class="slide-number-delimiter"> / </span><span class="slide-number-b">' +
       total +
       "</span></a>"
     );
+  }
+
+  function updateNativeSlideNumberText(nativeNumber, number, total, includeTotal) {
+    var current = nativeNumber.querySelector(".slide-number-a");
+    var delimiter = nativeNumber.querySelector(".slide-number-delimiter");
+    var totalElement = nativeNumber.querySelector(".slide-number-b");
+
+    if (!current || (includeTotal && !totalElement)) {
+      return false;
+    }
+
+    current.textContent = String(number);
+    if (includeTotal) {
+      totalElement.textContent = String(total);
+      if (delimiter && delimiter.textContent.trim() === "/") {
+        delimiter.textContent = " / ";
+      }
+    }
+    return true;
   }
 
   function syncNativeSlideNumber(deck, state, options, currentSlide) {
@@ -758,12 +776,12 @@
     }
 
     nativeNumber.style.removeProperty("visibility");
-    nativeNumber.innerHTML = renderNativeSlideNumber(
-      slideNumber,
-      state.slideNumbers.size,
-      getSlideHref(deck, currentSlide),
-      shouldShowNativeTotal(getNativeSlideNumberFormat(deck))
-    );
+    var includeTotal = shouldShowNativeTotal(getNativeSlideNumberFormat(deck));
+    if (updateNativeSlideNumberText(nativeNumber, slideNumber, state.slideNumbers.size, includeTotal)) {
+      return;
+    }
+
+    nativeNumber.innerHTML = renderNativeSlideNumber(slideNumber, state.slideNumbers.size, getSlideHref(deck, currentSlide), includeTotal);
   }
 
   function scheduleNativeSlideNumberSync(deck, state, options, currentSlide) {
