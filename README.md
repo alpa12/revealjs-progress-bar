@@ -87,15 +87,18 @@ Customize the bar with CSS variables:
 
 ```css
 :root {
-  --rpb-top: 0.7rem;
-  --rpb-width: min(88vw, 980px);
-  --rpb-height: 0.14rem;
+  --rpb-top: 1.04svh;
+  --rpb-width: min(88vw, 1176px);
+  --rpb-max-width-per-slide: 10%;
+  --rpb-height: 0.207svh;
   --rpb-fill-color: #2563eb;
   --rpb-track-color: rgba(37, 99, 235, 0.16);
   --rpb-label-color: rgba(17, 24, 39, 0.58);
   --rpb-label-active-color: #111827;
 }
 ```
+
+The bar is centered inside the RevealJS slide content area. `--rpb-width` is the absolute maximum, while `--rpb-max-width-per-slide` keeps short decks from rendering an overly long bar.
 
 ## Progress Rules
 

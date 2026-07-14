@@ -1,8 +1,17 @@
 :root {
-  --rpb-top: 0.7rem;
-  --rpb-width: min(88vw, 980px);
-  --rpb-height: 0.14rem;
-  --rpb-gap: 0.22rem;
+  --rpb-top: 1.04svh;
+  --rpb-width: min(88vw, 1176px);
+  --rpb-max-width-per-slide: 10%;
+  --rpb-height: 0.207svh;
+  --rpb-gap: 0.326svh;
+  --rpb-label-size: 1.26svh;
+  --rpb-label-margin: 0.296svh;
+  --rpb-number-size: 1.555svh;
+  --rpb-number-offset: 0.385svh;
+  --rpb-number-height: 0.859svh;
+  --rpb-label-hover-lift: 0.044svh;
+  --rpb-number-hover-lift: 0.074svh;
+  --rpb-exit-lift: 0.267svh;
   --rpb-track-color: color-mix(in srgb, currentColor 18%, transparent);
   --rpb-fill-color: currentColor;
   --rpb-label-color: color-mix(in srgb, currentColor 54%, transparent);
@@ -20,21 +29,19 @@
 
 .reveal .rpb-progress {
   position: fixed;
-  top: var(--rpb-top);
-  left: 50%;
+  top: var(--rpb-computed-top, var(--rpb-top));
+  left: var(--rpb-computed-left, 50%);
   z-index: 31;
   display: flex;
-  width: var(--rpb-width);
-  gap: var(--rpb-gap);
+  width: var(--rpb-computed-width, var(--rpb-width));
+  gap: var(--rpb-computed-gap, var(--rpb-gap));
   align-items: flex-end;
   color: var(--rpb-color, currentColor);
   opacity: 1;
   transform: translateX(-50%);
   transition:
     opacity 180ms ease,
-    visibility 180ms ease,
-    top var(--rpb-overview-rise-duration) cubic-bezier(0.2, 0.72, 0.2, 1),
-    width var(--rpb-overview-rise-duration) cubic-bezier(0.2, 0.72, 0.2, 1);
+    visibility 180ms ease;
 }
 
 .reveal .rpb-progress.rpb-is-hidden {
@@ -45,6 +52,7 @@
 
 .reveal .rpb-progress.rpb-is-overview-setup {
   top: var(--rpb-overview-top, var(--rpb-top));
+  left: var(--rpb-overview-left, var(--rpb-computed-left, 50%));
   width: var(--rpb-overview-width, var(--rpb-width));
   transition:
     opacity 180ms ease,
@@ -52,10 +60,12 @@
 }
 
 .reveal .rpb-progress.rpb-is-overview-transition {
-  top: var(--rpb-top);
-  width: var(--rpb-width);
+  top: var(--rpb-computed-top, var(--rpb-top));
+  left: var(--rpb-computed-left, 50%);
+  width: var(--rpb-computed-width, var(--rpb-width));
   transition:
     top var(--rpb-overview-rise-duration) cubic-bezier(0.18, 0.72, 0.16, 1),
+    left var(--rpb-overview-rise-duration) cubic-bezier(0.18, 0.72, 0.16, 1),
     width var(--rpb-overview-rise-duration) cubic-bezier(0.18, 0.72, 0.16, 1);
 }
 
@@ -75,16 +85,16 @@
 
 .reveal .rpb-item:focus-visible {
   outline: 2px solid var(--rpb-focus-color);
-  outline-offset: 0.18rem;
-  border-radius: 0.22rem;
+  outline-offset: calc(var(--rpb-computed-height, var(--rpb-height)) * 1.29);
+  border-radius: calc(var(--rpb-computed-height, var(--rpb-height)) * 1.57);
 }
 
 .reveal .rpb-label {
   display: block;
-  margin-bottom: 0.2rem;
+  margin-bottom: var(--rpb-computed-label-margin, var(--rpb-label-margin));
   overflow: hidden;
   color: var(--rpb-label-color);
-  font-size: 0.34em;
+  font-size: var(--rpb-computed-label-size, var(--rpb-label-size));
   font-weight: 700;
   line-height: 1.1;
   text-align: center;
@@ -102,7 +112,7 @@
   display: block;
   overflow: visible;
   width: 100%;
-  height: var(--rpb-height);
+  height: var(--rpb-computed-height, var(--rpb-height));
   border-radius: 999px;
   background: var(--rpb-track-color);
   transition:
@@ -140,8 +150,8 @@
 }
 
 .reveal .rpb-numbers {
-  top: calc(100% + 0.26rem);
-  height: 0.58rem;
+  top: calc(100% + var(--rpb-computed-number-offset, var(--rpb-number-offset)));
+  height: var(--rpb-computed-number-height, var(--rpb-number-height));
   opacity: 0;
   transition: opacity 170ms ease;
 }
@@ -152,7 +162,7 @@
   display: inline-block;
   width: max-content;
   color: var(--rpb-number-color);
-  font-size: 0.42em;
+  font-size: var(--rpb-computed-number-size, var(--rpb-number-size));
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -176,15 +186,15 @@
 }
 
 .reveal .rpb-item.rpb-is-hover-focus .rpb-label {
-  transform: translateY(-0.03rem) scale(1.18);
+  transform: translateY(calc(var(--rpb-computed-label-hover-lift, var(--rpb-label-hover-lift)) * -1)) scale(1.18);
 }
 
 .reveal .rpb-item.rpb-is-active .rpb-track {
-  height: calc(var(--rpb-height) * 1.8);
+  height: calc(var(--rpb-computed-height, var(--rpb-height)) * 1.8);
 }
 
 .reveal .rpb-item.rpb-is-hover-focus .rpb-track {
-  height: calc(var(--rpb-height) * 2.7);
+  height: calc(var(--rpb-computed-height, var(--rpb-height)) * 2.7);
 }
 
 .reveal .rpb-item.rpb-is-complete .rpb-fill,
@@ -207,7 +217,7 @@
 .reveal .rpb-item.rpb-is-active .rpb-number.rpb-is-current {
   color: var(--rpb-label-active-color);
   opacity: 1;
-  transform: translateX(-50%) translateY(-0.05rem);
+  transform: translateX(-50%) translateY(calc(var(--rpb-computed-number-hover-lift, var(--rpb-number-hover-lift)) * -1));
 }
 
 .reveal .progress-overview.rpb-overview-slide {
@@ -235,7 +245,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--rpb-width);
+  width: var(--rpb-computed-width, var(--rpb-width));
   min-height: 1.15em;
   margin: 0;
   color: var(--rpb-label-active-color);
@@ -260,7 +270,7 @@
   bottom: 12.8%;
   left: 50%;
   height: auto;
-  width: var(--rpb-width);
+  width: var(--rpb-computed-width, var(--rpb-width));
   transform: translateX(-50%);
 }
 
@@ -279,7 +289,7 @@
 
 .reveal .progress-overview.rpb-is-exiting.present > :not(.rpb-overview-shell) {
   opacity: 0 !important;
-  transform: translateY(-0.18rem);
+  transform: translateY(calc(var(--rpb-computed-exit-lift, var(--rpb-exit-lift)) * -1));
   transition:
     opacity 380ms ease,
     transform 380ms ease;
@@ -287,7 +297,7 @@
 
 .reveal .progress-overview.rpb-is-exiting.present .rpb-overview-title {
   opacity: 0 !important;
-  transform: translate(-50%, calc(-50% - 0.18rem));
+  transform: translate(-50%, calc(-50% - var(--rpb-computed-exit-lift, var(--rpb-exit-lift))));
   transition:
     opacity 380ms ease,
     transform 380ms ease;
@@ -300,18 +310,7 @@
 
 @media (max-width: 700px) {
   :root {
-    --rpb-top: 0.52rem;
-    --rpb-width: min(94vw, 760px);
-    --rpb-height: 0.12rem;
-    --rpb-gap: 0.16rem;
-  }
-
-  .reveal .rpb-label {
-    font-size: 0.24em;
-  }
-
-  .reveal .rpb-number {
-    font-size: 0.32em;
+    --rpb-width: min(94vw, 912px);
   }
 
   .reveal .rpb-overview-title {

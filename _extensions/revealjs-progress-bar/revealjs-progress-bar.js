@@ -15,6 +15,7 @@
   var EXIT_BUFFER = 120;
   var SLIDE_NUMBER_STEPS = [1, 2, 5, 10, 25, 100];
   var FALLBACK_MAX_VISIBLE_NUMBERS = 18;
+  var DEFAULT_MAX_WIDTH_PER_SLIDE = 0.1;
 
   function toArray(value) {
     return Array.prototype.slice.call(value || []);
@@ -59,8 +60,13 @@
     };
   }
 
-  function getSlidesRoot(deck) {
+  function getRevealElement(deck) {
     var revealElement = deck && deck.getRevealElement ? deck.getRevealElement() : document.querySelector(".reveal");
+    return revealElement || null;
+  }
+
+  function getSlidesRoot(deck) {
+    var revealElement = getRevealElement(deck);
     return revealElement ? revealElement.querySelector(".slides") : null;
   }
 
@@ -123,14 +129,93 @@
     });
   }
 
+  function isSectionTitleSlide(slide) {
+    return !!(
+      slide &&
+      (slide.classList.contains("level1") ||
+        slide.classList.contains("title-slide") ||
+        !!slide.querySelector(":scope > h1"))
+    );
+  }
+
   function findSectionTitleSlide(slides) {
     return slides.find(function (slide) {
-      return (
-        slide.classList.contains("level1") ||
-        slide.classList.contains("title-slide") ||
-        !!slide.querySelector(":scope > h1")
-      );
+      return isSectionTitleSlide(slide);
     });
+  }
+
+  function hasProgressHeading(slide) {
+    return !!(slide && slide.querySelector(":scope > h1, :scope > h2"));
+  }
+
+  function collectSectionsFromFlatSlides(deck, markedOverviewSlide) {
+    var sections = [];
+    var flatSlides = getNumberedSlides(deck, getSlidesRoot(deck));
+    var afterOverview = !markedOverviewSlide;
+    var currentGroup = null;
+
+    function finishCurrentGroup() {
+      if (!currentGroup) {
+        return;
+      }
+
+      var contentSlides =
+        currentGroup.contentSlides.length > 0 ? currentGroup.contentSlides : [currentGroup.targetSlide];
+      var label = resolveLabel(currentGroup.targetSlide, "Section " + (sections.length + 1));
+      sections.push({
+        label: label,
+        fullTitle: resolveFullTitle(currentGroup.targetSlide, label),
+        slides: currentGroup.slides,
+        contentSlides: contentSlides,
+        targetSlide: currentGroup.targetSlide
+      });
+      currentGroup = null;
+    }
+
+    flatSlides.forEach(function (slide) {
+      if (!slide || isDeckTitleSlide(slide)) {
+        return;
+      }
+
+      if (isOverviewSlide(slide)) {
+        if (slide === markedOverviewSlide) {
+          afterOverview = true;
+        }
+        return;
+      }
+
+      if (!afterOverview || !hasProgressHeading(slide)) {
+        return;
+      }
+
+      if (isSectionTitleSlide(slide)) {
+        finishCurrentGroup();
+        currentGroup = {
+          targetSlide: slide,
+          slides: [slide],
+          contentSlides: []
+        };
+        return;
+      }
+
+      if (currentGroup) {
+        currentGroup.slides.push(slide);
+        currentGroup.contentSlides.push(slide);
+        return;
+      }
+
+      var singleLabel = resolveLabel(slide, "Section " + (sections.length + 1));
+      sections.push({
+        label: singleLabel,
+        fullTitle: resolveFullTitle(slide, singleLabel),
+        slides: [slide],
+        contentSlides: [slide],
+        targetSlide: slide
+      });
+    });
+
+    finishCurrentGroup();
+    return sections;
   }
 
   function collectSections(deck, options) {
@@ -194,6 +279,10 @@
         targetSlide: topSection
       });
     });
+
+    if (sections.length === 0 && deck && typeof deck.getSlides === "function") {
+      sections = collectSectionsFromFlatSlides(deck, markedOverviewSlide);
+    }
 
     return {
       sections: sections,
@@ -338,6 +427,218 @@
     });
   }
 
+  function getCssVariable(element, name) {
+    if (!element || !window.getComputedStyle) {
+      return "";
+    }
+    return window.getComputedStyle(element).getPropertyValue(name).trim();
+  }
+
+  function createCssProbe(element) {
+    var probe = document.createElement("div");
+    probe.style.position = "fixed";
+    probe.style.left = "-10000px";
+    probe.style.top = "0";
+    probe.style.visibility = "hidden";
+    probe.style.pointerEvents = "none";
+    probe.style.boxSizing = "border-box";
+    (element && element.parentElement ? element.parentElement : document.body).appendChild(probe);
+    return probe;
+  }
+
+  function resolveCssLength(element, value, fallback) {
+    if (!value) {
+      return fallback;
+    }
+
+    var numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+
+    var probe = createCssProbe(element);
+    probe.style.width = value;
+    probe.style.height = "0";
+    var rect = probe.getBoundingClientRect();
+    probe.remove();
+    return Number.isFinite(rect.width) && rect.width >= 0 ? rect.width : fallback;
+  }
+
+  function resolveCssRatio(element, value, fallback) {
+    if (!value) {
+      return fallback;
+    }
+
+    var trimmed = value.trim();
+    var numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return clamp(numeric, 0, 1);
+    }
+
+    if (trimmed.indexOf("%") > -1 && /^-?\d*\.?\d+%$/.test(trimmed)) {
+      return clamp(parseFloat(trimmed) / 100, 0, 1);
+    }
+
+    var wrapper = createCssProbe(element);
+    var child = document.createElement("div");
+    wrapper.style.width = "1000px";
+    wrapper.style.height = "0";
+    child.style.width = trimmed;
+    child.style.height = "0";
+    wrapper.appendChild(child);
+    var rect = child.getBoundingClientRect();
+    wrapper.remove();
+
+    if (Number.isFinite(rect.width) && rect.width >= 0) {
+      return clamp(rect.width / 1000, 0, 1);
+    }
+    return fallback;
+  }
+
+  function getViewportSize() {
+    var visualViewport = window.visualViewport || null;
+    return {
+      width: visualViewport && visualViewport.width ? visualViewport.width : window.innerWidth,
+      height: visualViewport && visualViewport.height ? visualViewport.height : window.innerHeight
+    };
+  }
+
+  function getProgressSlideCount(sections) {
+    return (sections || []).reduce(function (total, section) {
+      return total + (section && section.contentSlides ? section.contentSlides.length : 0);
+    }, 0);
+  }
+
+  function measureDeckLayout(deck) {
+    var revealElement = getRevealElement(deck);
+    var slidesRoot = getSlidesRoot(deck);
+    var viewport = getViewportSize();
+    var revealRect = revealElement
+      ? revealElement.getBoundingClientRect()
+      : { left: 0, width: viewport.width, height: viewport.height };
+    var slidesRect = slidesRoot ? slidesRoot.getBoundingClientRect() : null;
+    var contentLeft = slidesRect && slidesRect.width > 0 ? slidesRect.left : revealRect.left;
+    var contentWidth = slidesRect && slidesRect.width > 0 ? slidesRect.width : revealRect.width;
+    var scale = deck && typeof deck.getScale === "function" ? deck.getScale() : 0;
+
+    if (!(scale > 0) && slidesRoot && slidesRoot.offsetWidth > 0 && slidesRect && slidesRect.width > 0) {
+      scale = slidesRect.width / slidesRoot.offsetWidth;
+    }
+    if (!(scale > 0)) {
+      scale = 1;
+    }
+
+    var styleElement = document.getElementById(NAV_ID) || revealElement || document.documentElement;
+    var fallbackWidth = Math.min(viewport.width * 0.88, 1176);
+    var fallbackHeight = Math.max(1, viewport.height * 0.00207);
+
+    return {
+      contentLeft: contentLeft,
+      contentWidth: Math.max(0, contentWidth),
+      contentCenter: contentLeft + contentWidth / 2,
+      scale: scale,
+      maxWidth: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-width"), fallbackWidth),
+      maxWidthPerSlide: resolveCssRatio(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-max-width-per-slide"),
+        DEFAULT_MAX_WIDTH_PER_SLIDE
+      ),
+      top: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-top"), viewport.height * 0.0104),
+      height: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-height"), fallbackHeight),
+      gap: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-gap"), viewport.height * 0.00326),
+      labelSize: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-label-size"), viewport.height * 0.0126),
+      labelMargin: resolveCssLength(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-label-margin"),
+        viewport.height * 0.00296
+      ),
+      numberSize: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-number-size"), viewport.height * 0.01555),
+      numberOffset: resolveCssLength(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-number-offset"),
+        viewport.height * 0.00385
+      ),
+      numberHeight: resolveCssLength(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-number-height"),
+        viewport.height * 0.00859
+      ),
+      labelHoverLift: resolveCssLength(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-label-hover-lift"),
+        viewport.height * 0.00044
+      ),
+      numberHoverLift: resolveCssLength(
+        styleElement,
+        getCssVariable(styleElement, "--rpb-number-hover-lift"),
+        viewport.height * 0.00074
+      ),
+      exitLift: resolveCssLength(styleElement, getCssVariable(styleElement, "--rpb-exit-lift"), viewport.height * 0.00267)
+    };
+  }
+
+  function computeProgressBarWidth(state, metrics) {
+    var progressSlideCount = getProgressSlideCount(state.sections);
+    var slideLimitedWidth = metrics.contentWidth * Math.max(1, progressSlideCount) * metrics.maxWidthPerSlide;
+    return Math.max(0, Math.min(metrics.contentWidth, metrics.maxWidth, slideLimitedWidth));
+  }
+
+  function setPixelVariable(element, name, value) {
+    if (element && Number.isFinite(value)) {
+      element.style.setProperty(name, Math.max(0, value).toFixed(3) + "px");
+    }
+  }
+
+  function applyLayoutDimensions(element, metrics, width, scale) {
+    var divisor = scale > 0 ? scale : 1;
+    setPixelVariable(element, "--rpb-computed-width", width / divisor);
+    setPixelVariable(element, "--rpb-computed-height", metrics.height / divisor);
+    setPixelVariable(element, "--rpb-computed-gap", metrics.gap / divisor);
+    setPixelVariable(element, "--rpb-computed-label-size", metrics.labelSize / divisor);
+    setPixelVariable(element, "--rpb-computed-label-margin", metrics.labelMargin / divisor);
+    setPixelVariable(element, "--rpb-computed-number-size", metrics.numberSize / divisor);
+    setPixelVariable(element, "--rpb-computed-number-offset", metrics.numberOffset / divisor);
+    setPixelVariable(element, "--rpb-computed-number-height", metrics.numberHeight / divisor);
+    setPixelVariable(element, "--rpb-computed-label-hover-lift", metrics.labelHoverLift / divisor);
+    setPixelVariable(element, "--rpb-computed-number-hover-lift", metrics.numberHoverLift / divisor);
+    setPixelVariable(element, "--rpb-computed-exit-lift", metrics.exitLift / divisor);
+  }
+
+  function applyProgressBarLayout(deck, state) {
+    var metrics = measureDeckLayout(deck);
+    var width = computeProgressBarWidth(state, metrics);
+    var nav = document.getElementById(NAV_ID);
+
+    if (nav) {
+      setPixelVariable(nav, "--rpb-computed-left", metrics.contentCenter);
+      setPixelVariable(nav, "--rpb-computed-top", metrics.top);
+      applyLayoutDimensions(nav, metrics, width, 1);
+    }
+
+    if (state.overviewSlide) {
+      applyLayoutDimensions(state.overviewSlide, metrics, width, metrics.scale);
+    }
+
+    return metrics;
+  }
+
+  function scheduleProgressBarLayout(deck, state, afterLayout) {
+    state.layoutAfterLayout = afterLayout || state.layoutAfterLayout || null;
+    if (state.layoutFrame) {
+      return;
+    }
+
+    state.layoutFrame = window.requestAnimationFrame(function () {
+      var callback = state.layoutAfterLayout;
+      state.layoutFrame = null;
+      state.layoutAfterLayout = null;
+      applyProgressBarLayout(deck, state);
+      if (callback) {
+        callback();
+      }
+    });
+  }
+
   function createItem(section, index, slideNumbers, options, asButton) {
     var item = document.createElement(asButton ? "button" : "div");
     item.className = "rpb-item";
@@ -414,9 +715,6 @@
       nav.appendChild(createItem(section, index, state.slideNumbers, options, true));
     });
     bindNavInteractions(deck, state, nav);
-    window.requestAnimationFrame(function () {
-      updateSlideNumberSampling(nav, state.sections, state.slideNumbers);
-    });
     return nav;
   }
 
@@ -446,9 +744,6 @@
 
     state.sections.forEach(function (section, index) {
       preview.appendChild(createItem(section, index, state.slideNumbers, options, false));
-    });
-    window.requestAnimationFrame(function () {
-      updateSlideNumberSampling(preview, state.sections, state.slideNumbers);
     });
 
     var fragments = document.createElement("div");
@@ -865,6 +1160,7 @@
       return;
     }
 
+    applyProgressBarLayout(deck, state);
     var rect = preview.getBoundingClientRect();
     state.overviewExitRunning = true;
     completeNavForOverviewExit(nav);
@@ -872,6 +1168,7 @@
     nav.classList.add("rpb-is-overview-setup");
     nav.classList.remove("rpb-is-overview-transition");
     nav.style.setProperty("--rpb-overview-top", rect.top.toFixed(2) + "px");
+    nav.style.setProperty("--rpb-overview-left", (rect.left + rect.width / 2).toFixed(2) + "px");
     nav.style.setProperty("--rpb-overview-width", rect.width.toFixed(2) + "px");
     state.overviewSlide.classList.add("rpb-is-exiting");
 
@@ -908,6 +1205,7 @@
       nav.classList.remove("rpb-is-overview-setup");
       nav.classList.remove("rpb-is-overview-transition");
       nav.style.removeProperty("--rpb-overview-top");
+      nav.style.removeProperty("--rpb-overview-left");
       nav.style.removeProperty("--rpb-overview-width");
     }
     if (deck && typeof deck.configure === "function") {
@@ -924,7 +1222,9 @@
       slideNumbers: new Map(),
       hoverSectionIndex: -1,
       hoverSlideIndex: -1,
-      overviewExitRunning: false
+      overviewExitRunning: false,
+      layoutFrame: null,
+      layoutAfterLayout: null
     };
 
     return {
@@ -948,6 +1248,7 @@
           if (deck.sync) {
             deck.sync();
           }
+          scheduleProgressBarLayout(deck, state, updateRenderedSlideNumberSampling);
           syncOverview(state);
           syncNav(deck, state, deck.getCurrentSlide ? deck.getCurrentSlide() : null);
           scheduleNativeSlideNumberSync(deck, state, options);
@@ -984,6 +1285,10 @@
           }
         });
 
+        deck.on("resize", function () {
+          scheduleProgressBarLayout(deck, state, updateRenderedSlideNumberSampling);
+        });
+
         deck.on("fragmentshown", function (event) {
           var fragment = event.fragment;
           if (!fragment || !state.overviewSlide || !state.overviewSlide.contains(fragment)) {
@@ -1007,8 +1312,14 @@
         }
 
         window.addEventListener("resize", function () {
-          window.requestAnimationFrame(updateRenderedSlideNumberSampling);
+          scheduleProgressBarLayout(deck, state, updateRenderedSlideNumberSampling);
         });
+
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", function () {
+            scheduleProgressBarLayout(deck, state, updateRenderedSlideNumberSampling);
+          });
+        }
       }
     };
   }
